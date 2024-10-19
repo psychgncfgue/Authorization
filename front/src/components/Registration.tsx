@@ -50,9 +50,6 @@ const Registration: React.FC = () => {
             const response = await axios.post('http://localhost:3000/auth/register', formData);
             console.log('Registration Success:', response.data);
 
-            // Сохраняем токены в localStorage
-            localStorage.setItem('accessToken', response.data.access_token);
-            localStorage.setItem('refreshToken', response.data.refresh_token);
 
             navigate('/auth');
         } catch (error) {

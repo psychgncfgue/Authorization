@@ -10,13 +10,20 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {
+      "@config/*": ["src/config/*"],
+      "@entities/*": ["src/entities/*"],
+      "@migrations/*": ["src/migrations/*"]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "esModuleInterop": true,
+    "moduleResolution": "node"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]

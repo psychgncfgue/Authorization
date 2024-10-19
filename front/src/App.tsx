@@ -1,16 +1,23 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from "react-redux";
-import { RootState } from "./redux/store/store";
+import React, {useEffect} from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {useDispatch, useSelector} from "react-redux";
+import {AppDispatch, RootState} from "./redux/store/store";
 import Auth from './components/Auth';
 import Registration from './components/Registration';
 import Dashboard from './components/Dashboard';
-import PrivateRoute from './components/PrivateRoute';
 import { CircularProgress, Box } from '@mui/material';
-import { CssBaseline } from '@mui/material'; // Импортируем CssBaseline
+import { CssBaseline } from '@mui/material';
+import {checkAuth} from "./redux/actions/authActions";
+import ProductPage from "./components/ProductPage";
+import Home from "./components/Home";
 
 function App() {
-    const isLoading = useSelector((state: RootState) => state.auth.isLoading);
+    const isLoading = useSelector((state: RootState) => state.auth.isLoading)
+    const dispatch = useDispatch<AppDispatch>();
+
+    useEffect(() => {
+        dispatch(checkAuth());
+    }, [dispatch]);
 
     if (isLoading) {
         return (
@@ -29,14 +36,14 @@ function App() {
 
     return (
         <Router>
-            <CssBaseline /> {/* Добавляем CssBaseline здесь */}
+            <CssBaseline />
             <Routes>
+                <Route path="/" element={<Dashboard />}>
+                    <Route index element={<Home />} />
+                    <Route path="product/:name/:size" element={<ProductPage />} />
+                </Route>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/registration" element={<Registration />} />
-                <Route element={<PrivateRoute />}>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                </Route>
-                <Route path="/" element={<Navigate to="/auth" />} />
             </Routes>
         </Router>
     );

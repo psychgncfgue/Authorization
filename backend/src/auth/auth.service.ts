@@ -27,7 +27,6 @@ export class AuthService {
         const accessToken = this.jwtService.sign(payload, { expiresIn: '30s' });
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
-        // Сохраняем refresh токен в базе данных
         await this.refreshTokenService.create(user.id, refreshToken);
 
         return {
@@ -46,7 +45,6 @@ export class AuthService {
                 throw new NotFoundException('User not found');
             }
 
-            // Генерируем новый access токен и возвращаем его напрямую
             return this.jwtService.sign({ email: user.email, sub: user.id }, { expiresIn: '30s' });
 
         } catch (e) {
@@ -98,5 +96,14 @@ export class AuthService {
         } catch (e) {
             return false;
         }
+    }
+
+    async getUserFromAccessToken(accessToken: string) {
+        const decoded = this.jwtService.verify(accessToken);
+        const user = await this.userService.findById(decoded.sub);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        return user;
     }
 }

@@ -13,14 +13,14 @@ export class AuthController {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 30 * 1000, // 30 секунд для access_token
+            maxAge: 30 * 1000,
         });
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней для refresh_token
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         });
     }
 
@@ -30,6 +30,7 @@ export class AuthController {
         this.setCookies(res, access_token, refresh_token);
 
         return res.send({
+            userId: user.id,
             username: user.username,
             email: user.email,
         });
@@ -42,6 +43,7 @@ export class AuthController {
         this.setCookies(res, access_token, refresh_token);
 
         return res.send({
+            userId: user.id,
             username: user.username,
             email: user.email,
         });
@@ -49,7 +51,7 @@ export class AuthController {
 
     @Post('refresh')
     async refresh(@Req() req: ExpressRequest, @Res() res: Response) {
-        const refreshToken = req.cookies.refreshToken; // Получаем refreshToken из cookies
+        const refreshToken = req.cookies.refreshToken;
 
         if (!refreshToken) {
             return res.status(400).send({ error: 'No refresh token found' });
@@ -90,12 +92,26 @@ export class AuthController {
             const isAccessTokenValid = await this.authService.verifyAccessToken(accessToken);
 
             if (isAccessTokenValid) {
-                return res.send({ accessToken, isAuthenticated: true });
+                const user = await this.authService.getUserFromAccessToken(accessToken); // Получите данные пользователя
+                return res.send({
+                    accessToken,
+                    isAuthenticated: true,
+                    userId: user.id,
+                    username: user.username,
+                    email: user.email,
+                });
             } else if (refreshToken) {
                 const newAccessToken = await this.authService.refreshToken(refreshToken);
                 if (newAccessToken) {
                     this.setCookies(res, newAccessToken, refreshToken);
-                    return res.send({ accessToken: newAccessToken, isAuthenticated: true });
+                    const user = await this.authService.getUserFromAccessToken(newAccessToken); // Получите данные пользователя
+                    return res.send({
+                        accessToken: newAccessToken,
+                        isAuthenticated: true,
+                        userId: user.id,
+                        username: user.username,
+                        email: user.email,
+                    });
                 } else {
                     return res.status(401).send({ error: 'Failed to refresh access token' });
                 }

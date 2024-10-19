@@ -5,7 +5,7 @@ import { RootState } from '../redux/store/store';
 
 const PrivateRoute: React.FC = () => {
     const location = useLocation();
-    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated); // Используйте isAuthenticated
+    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
     return isAuthenticated ? (
         <Outlet />

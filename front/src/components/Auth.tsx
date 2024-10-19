@@ -21,7 +21,7 @@ const Auth: React.FC = () => {
 
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
-            navigate('/dashboard');
+            navigate('/');
         }
     }, [isLoading, isAuthenticated, navigate]);
 
