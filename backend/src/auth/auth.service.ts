@@ -26,31 +26,30 @@ export class AuthService {
         const payload = { email: user.email, sub: user.id };
         const accessToken = this.jwtService.sign(payload, { expiresIn: '30s' });
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-
+    
         await this.refreshTokenService.create(user.id, refreshToken);
-
+    
         return {
-            access_token: accessToken,
-            refresh_token: refreshToken,
-            user,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          user,
         };
-    }
-
-    async refreshToken(refreshToken: string) {
+      }
+    
+      async refreshToken(refreshToken: string) {
         try {
-            const decoded = this.jwtService.verify(refreshToken);
-            const user = await this.userService.findById(decoded.sub);
-
-            if (!user) {
-                throw new NotFoundException('User not found');
-            }
-
-            return this.jwtService.sign({ email: user.email, sub: user.id }, { expiresIn: '30s' });
-
+          const decoded = this.jwtService.verify(refreshToken);
+          const user = await this.userService.findById(decoded.sub);
+    
+          if (!user || !(await this.refreshTokenService.validate(user.id, refreshToken))) {
+            throw new NotFoundException('User not found or invalid refresh token');
+          }
+    
+          return this.jwtService.sign({ email: user.email, sub: user.id }, { expiresIn: '30s' });
         } catch (e) {
-            throw new BadRequestException('Invalid refresh token');
+          throw new BadRequestException('Invalid refresh token');
         }
-    }
+      }
 
     async register(registerDto: RegisterDto) {
         const { email, username } = registerDto;
@@ -80,8 +79,11 @@ export class AuthService {
     }
 
     async logout(refreshToken: string) {
-        await this.refreshTokenService.deleteByToken(refreshToken);
-    }
+        const decoded = this.jwtService.decode(refreshToken) as { sub: string };
+        if (decoded && decoded.sub) {
+          await this.refreshTokenService.delete(decoded.sub);
+        }
+      }
 
     async verifyAccessToken(accessToken: string): Promise<boolean> {
         try {

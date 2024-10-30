@@ -71,8 +71,6 @@ export class AuthController {
     @Post('logout')
     async logout(@Body() body: { refreshToken: string }, @Res() res: Response) {
         await this.authService.logout(body.refreshToken);
-
-        // Очищаем cookies
         res.clearCookie('accessToken');
         res.clearCookie('refreshToken');
 
@@ -92,7 +90,7 @@ export class AuthController {
             const isAccessTokenValid = await this.authService.verifyAccessToken(accessToken);
 
             if (isAccessTokenValid) {
-                const user = await this.authService.getUserFromAccessToken(accessToken); // Получите данные пользователя
+                const user = await this.authService.getUserFromAccessToken(accessToken);
                 return res.send({
                     accessToken,
                     isAuthenticated: true,
@@ -104,7 +102,7 @@ export class AuthController {
                 const newAccessToken = await this.authService.refreshToken(refreshToken);
                 if (newAccessToken) {
                     this.setCookies(res, newAccessToken, refreshToken);
-                    const user = await this.authService.getUserFromAccessToken(newAccessToken); // Получите данные пользователя
+                    const user = await this.authService.getUserFromAccessToken(newAccessToken);
                     return res.send({
                         accessToken: newAccessToken,
                         isAuthenticated: true,

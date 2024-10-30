@@ -7,12 +7,14 @@ import { LocalStrategy } from './local.strategy';
 import { UserModule } from '../user/user.module';
 import * as dotenv from 'dotenv';
 import {RefreshTokenModule} from "../refreshTokens/refresh.token.module";
+import { RedisModule } from '../redis/redis.module';
 dotenv.config();
 
 @Module({
     imports: [
         UserModule,
         RefreshTokenModule,
+        RedisModule,
         JwtModule.register({
             secret: process.env.JWT_SECRET,
             signOptions: { expiresIn: '30s' },

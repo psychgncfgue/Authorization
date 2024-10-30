@@ -10,6 +10,7 @@ import { CssBaseline } from '@mui/material';
 import {checkAuth} from "./redux/actions/authActions";
 import ProductPage from "./components/ProductPage";
 import Home from "./components/Home";
+import Cart from "./components/Cart";
 
 function App() {
     const isLoading = useSelector((state: RootState) => state.auth.isLoading)
@@ -41,6 +42,7 @@ function App() {
                 <Route path="/" element={<Dashboard />}>
                     <Route index element={<Home />} />
                     <Route path="product/:name/:size" element={<ProductPage />} />
+                    <Route path="cart/:userId" element={<Cart />} />
                 </Route>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/registration" element={<Registration />} />

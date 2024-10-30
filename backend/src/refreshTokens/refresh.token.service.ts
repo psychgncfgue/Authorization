@@ -1,25 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { RefreshToken } from './refresh.token.entity';
+import * as bcrypt from 'bcrypt';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class RefreshTokenService {
-    constructor(
-        @InjectRepository(RefreshToken)
-        private refreshTokenRepository: Repository<RefreshToken>,
-    ) {}
+  constructor(private readonly redisService: RedisService) {}
 
-    async create(userId: string, token: string): Promise<RefreshToken> {
-        const refreshToken = this.refreshTokenRepository.create({ userId, token });
-        return this.refreshTokenRepository.save(refreshToken);
+  async create(userId: string, token: string): Promise<void> {
+    const hashedToken = await bcrypt.hash(token, 10);
+    const redisKey = `refresh_token:${userId}`;
+
+    await this.redisService.set(redisKey, hashedToken, 7 * 24 * 60 * 60);
+  }
+
+  async validate(userId: string, token: string): Promise<boolean> {
+    const redisKey = `refresh_token:${userId}`;
+    const storedToken = await this.redisService.get(redisKey);
+
+    if (!storedToken) {
+      return false;
     }
 
-    async findByToken(token: string): Promise<RefreshToken | undefined> {
-        return this.refreshTokenRepository.findOne({ where: { token } });
-    }
+    return await bcrypt.compare(token, storedToken);
+  }
 
-    async deleteByToken(token: string): Promise<void> {
-        await this.refreshTokenRepository.delete({ token });
-    }
+  async delete(userId: string): Promise<void> {
+    const redisKey = `refresh_token:${userId}`;
+    await this.redisService.del(redisKey);
+  }
 }

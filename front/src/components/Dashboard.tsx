@@ -41,7 +41,7 @@ const Dashboard: React.FC = () => {
     };
 
     const handleNavigateCard = () => {
-        navigate('./card/${userId}')
+        navigate('./cart/${userId}')
     };
 
     const handleMenuClose = () => {

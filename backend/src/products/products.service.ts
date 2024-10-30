@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {Injectable, NotFoundException} from '@nestjs/common';
 import { Product } from './product.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {Category, Collection, Gender, Size} from '../../../enums/enums'; // Импортируйте ваши перечисления
+import {Category, Collection, Gender, Size} from '../../../enums/enums';
 
 @Injectable()
 export class ProductsService {
@@ -85,30 +85,33 @@ export class ProductsService {
         return this.productsRepository.find({ where: { gender } });
     }
 
-    async findFiltered(
-        category?: Category,
-        collection?: Collection,
-        orderByPrice?: 'ASC' | 'DESC',
-        gender?: Gender,
-    ): Promise<Product[]> {
-        const query = this.productsRepository.createQueryBuilder('product');
+    async countIdenticalProducts(
+        name: string,
+        category: Category,
+        collection: Collection,
+        gender: Gender,
+        size: Size
+    ): Promise<number> {
+        try {
+            const count = await this.productsRepository.count({
+                where: {
+                    name,
+                    category,
+                    collection,
+                    gender,
+                    size,
+                },
+            });
 
-        if (category) {
-            query.andWhere('product.category = :category', { category });
+            if (count === 0) {
+                throw new NotFoundException('Продукт не найден');
+            }
+
+            return count;
+        } catch (error) {
+            console.error('Error counting identical products:', error);
+            throw error;
         }
-
-        if (collection) {
-            query.andWhere('product.collection = :collection', { collection });
-        }
-
-        if (gender) {
-            query.andWhere('product.gender = :gender', { gender });
-        }
-
-        if (orderByPrice) {
-            query.orderBy('product.price', orderByPrice);
-        }
-
-        return query.getMany();
     }
+
 }

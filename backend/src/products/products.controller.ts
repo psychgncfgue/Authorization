@@ -1,7 +1,7 @@
 import {Controller, Get, NotFoundException, Param, Query} from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { Product } from './product.entity';
-import { Category, Collection, Gender } from '../../../enums/enums'; // Импортируйте ваши перечисления
+import {Category, Collection, Gender, Size} from '../../../enums/enums';
 
 @Controller('products')
 export class ProductsController {
@@ -69,18 +69,23 @@ export class ProductsController {
         return this.productsService.findByGender(Gender[gender as keyof typeof Gender]);
     }
 
-    @Get('filter')
-    async findFiltered(
-        @Query('category') category?: string,
-        @Query('collection') collection?: string,
-        @Query('order') orderByPrice?: 'ASC' | 'DESC',
-        @Query('gender') gender?: string,
-    ): Promise<Product[]> {
-        return this.productsService.findFiltered(
-            category ? (Category[category as keyof typeof Category] as Category) : undefined,
-            collection ? (Collection[collection as keyof typeof Collection] as Collection) : undefined,
-            orderByPrice,
-            gender ? (Gender[gender as keyof typeof Gender] as Gender) : undefined,
+    @Get('check-quantity/:name/:category/:collection/:gender/:size')
+    async checkQuantity(
+        @Param('name') name: string,
+        @Param('category') category: string,
+        @Param('collection') collection: string,
+        @Param('gender') gender: string,
+        @Param('size') size: string
+    ): Promise<{ count: number }> {
+
+        const count = await this.productsService.countIdenticalProducts(
+            name,
+            Category[category as keyof typeof Category],
+            Collection[collection as keyof typeof Collection],
+            Gender[gender as keyof typeof Gender],
+            Size[size as keyof typeof Size],
         );
+
+        return { count };
     }
 }

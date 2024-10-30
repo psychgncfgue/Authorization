@@ -22,7 +22,7 @@ import {
     getFavoritesRequest, getFavoritesSuccess, removeFromFavoritesFailure, removeFromFavoritesRequest, removeFromFavoritesSuccess
 } from "../reducers/favoritesSlice";
 import {ADD_TO_FAVORITES, CLEAR_FAVORITES, FETCH_FAVORITES, REMOVE_FROM_FAVORITES} from "../actions/favoritesActions";
-import {FavoritesItem, Product} from "../../interfaces/interfaces";
+import {CartItem, FavoritesItem, Product, ProductData} from "../../interfaces/interfaces";
 import {
     fetchProductPageFailure,
     fetchProductPageRequest,
@@ -42,6 +42,23 @@ import {
     fetchRecommendationsRequest,
     fetchRecommendationsSuccess
 } from "../reducers/recommendationsSlice";
+import {
+    addToCartFailure,
+    addToCartRequest,
+    addToCartSuccess, checkQuantityFailure,
+    checkQuantityRequest,
+    checkQuantitySuccess,
+    clearCartFailure,
+    clearCartRequest,
+    clearCartSuccess,
+    fetchCartFailure,
+    fetchCartRequest,
+    fetchCartSuccess,
+    removeFromCartFailure,
+    removeFromCartRequest,
+    removeFromCartSuccess
+} from "../reducers/cartSlice";
+import {ADD_TO_CART, CHECK_QUANTITY, CLEAR_CART, FETCH_CART, REMOVE_FROM_CART} from "../actions/cartActions";
 
 interface LoginAction {
     type: string;
@@ -139,6 +156,104 @@ function* fetchCarouselProductsSaga(action: { type: string; payload: { page: num
         yield put(fetchCarouselProductsSuccess(response.data.data));
     } catch (error) {
         yield put(fetchCarouselProductsFailure((error as Error).message));
+    }
+}
+
+function* checkProductQuantity(action: {
+    type: string;
+    payload: {
+        userId: string;
+        productData: ProductData;
+        id: string;
+    };
+}) {
+    const { productData, id } = action.payload;
+    const { name, category, collection, gender, size } = productData;
+    try {
+        yield put(checkQuantityRequest());
+        console.log('Отправляемые данные:', productData);
+        const response: AxiosResponse<{ count: number }> = yield call(() =>
+            axios.get(`http://localhost:3000/products/check-quantity/${encodeURIComponent(name)}/${encodeURIComponent(category)}/${encodeURIComponent(collection)}/${encodeURIComponent(gender)}/${encodeURIComponent(size)}`)
+        );
+
+        yield put(checkQuantitySuccess({ id, count: response.data.count }));
+    } catch (error: any) {
+        yield put(checkQuantityFailure(error.message));
+    }
+}
+
+function* checkCartQuantitiesSaga(action: { type: string; payload: { userId: string; productData: ProductData[]; cartItems: CartItem[] } }) {
+    const { userId, productData, cartItems } = action.payload;
+
+    if (productData && Array.isArray(productData)) {
+        yield all(
+            productData.map((product, index) =>
+                call(checkProductQuantity, {
+                    type: '',
+                    payload: {
+                        userId,
+                        productData: product,
+                        id: cartItems[index].id,
+                    },
+                })
+            )
+        );
+    } else {
+        console.error('productData не определены или не являются массивом', productData);
+    }
+}
+
+function* addToCartSaga(action: { type: string; payload: { userId: string; productId: number } }) {
+    const { userId, productId } = action.payload;
+    try {
+        yield put(addToCartRequest());
+        const response: AxiosResponse<{ id: string; updatedAt: string; items: CartItem[] }> = yield call(() =>
+            axios.post(`http://localhost:3000/cart/${userId}/add`, {
+                productId,
+            })
+        );
+        yield put(addToCartSuccess(response.data));
+    } catch (error: any) {
+        yield put(addToCartFailure(error.message));
+    }
+}
+
+function* fetchCartSaga(action: { type: string; payload: string }) {
+    try {
+        yield put(fetchCartRequest());
+        const userId = action.payload;
+        const response: AxiosResponse<{ items: CartItem[] }> = yield call(() =>
+            axios.get(`http://localhost:3000/cart/${userId}`)
+        );
+        yield put(fetchCartSuccess(response.data.items));
+    } catch (error: any) {
+        yield put(fetchCartFailure(error.message));
+    }
+}
+
+function* removeFromCartSaga(action: { type: string; payload: { userId: string; productId: number } }) {
+    const { userId, productId } = action.payload;
+    try {
+        yield put(removeFromCartRequest());
+        const response: AxiosResponse<CartItem[]> = yield call(() =>
+            axios.delete(`http://localhost:3000/cart/${userId}/remove/${productId}`)
+        );
+        yield put(removeFromCartSuccess(response.data));
+    } catch (error: any) {
+        yield put(removeFromCartFailure(error.message));
+    }
+}
+
+function* clearCartSaga(action: { type: string; payload: string }) {
+    const userId = action.payload;
+    try {
+        yield put(clearCartRequest());
+        yield call(() =>
+            axios.delete(`http://localhost:3000/cart/${userId}/clear`)
+        );
+        yield put(clearCartSuccess());
+    } catch (error: any) {
+        yield put(clearCartFailure(error.message));
     }
 }
 
@@ -263,6 +378,17 @@ export function* watchFetchRecommendations() {
     yield takeLatest(FETCH_RECOMMENDATIONS_REQUEST, fetchRecommendationsSaga);
 }
 
+function* watchCheckQuantity() {
+    yield takeLatest(CHECK_QUANTITY, checkCartQuantitiesSaga);
+}
+
+export function* watchCartSagas() {
+    yield takeLatest(ADD_TO_CART, addToCartSaga);
+    yield takeLatest(FETCH_CART, fetchCartSaga);
+    yield takeLatest(REMOVE_FROM_CART, removeFromCartSaga);
+    yield takeLatest(CLEAR_CART, clearCartSaga);
+}
+
 export default function* rootSaga() {
     yield all([
         watchLoginSaga(),
@@ -275,6 +401,8 @@ export default function* rootSaga() {
         watchClearCard(),
         watchFetchProductPage(),
         watchCarouselProducts(),
-        watchFetchRecommendations()
+        watchFetchRecommendations(),
+        watchCartSagas(),
+        watchCheckQuantity()
     ]);
 }

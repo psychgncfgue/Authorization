@@ -12,7 +12,7 @@ const Auth: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch<AppDispatch>();
     const isLoading = useSelector((state: RootState) => state.auth.isLoading);
-    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated); // Используйте isAuthenticated
+    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated); 
 
     const handleLogin = () => {
         setError(null);

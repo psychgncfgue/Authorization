@@ -11,10 +11,24 @@ export interface Product {
     collection: Collection;
     gender: Gender;
     size: Size;
-    quantity: number;
 }
 
 export interface FavoritesItem {
     id: string;
     product: Product;
+}
+
+export interface ProductData {
+    name: string;
+    category: string;
+    collection: string;
+    gender: string;
+    size: string;
+}
+
+export interface CartItem {
+    id: string;
+    product: Product;
+    quantity: number;
+    totalQuantity: number;
 }

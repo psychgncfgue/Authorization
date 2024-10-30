@@ -16,6 +16,7 @@ import {
 import { AppDispatch, RootState } from '../redux/store/store';
 import { fetchProductByIdRequest } from '../redux/actions/productActions';
 import Recommendations from "./Recommendations";
+import {addToCart} from "../redux/actions/cartActions";
 
 const ProductPage: React.FC = () => {
     const { name, size } = useParams<{ name: string; size: string }>();
@@ -23,6 +24,8 @@ const ProductPage: React.FC = () => {
     const { productPage, isLoadingProductPage } = useSelector((state: RootState) => state.productPage);
     const [selectedSize, setSelectedSize] = React.useState<string>('');
     const theme = useTheme();
+    const {userId} = useSelector((state: RootState) => state.auth)
+    const productId = useSelector((state: RootState) => state.productPage.productPage.id);
 
     useEffect(() => {
         if (size && name) {
@@ -45,7 +48,7 @@ const ProductPage: React.FC = () => {
     };
 
     const handleAddToCart = () => {
-        console.log('Добавить в корзину', productPage.id, selectedSize);
+        dispatch(addToCart(userId!, productId!))
     };
 
     if (isLoadingProductPage) {
